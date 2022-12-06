@@ -4,16 +4,19 @@ A Sphinx builder to generate DocBook output (`sphinx_docbook.docbook_builder`).
 
 ## Prerequisites
 
-Before installing rst2db, you'll need the following prerequisites:
+Before installing `sphinx_docbook` on Linux, you'll need the following
+prerequisites:
 
 * libxml2 and headers (**libxml2** and **libxml2-dev**)
-* Python bindings for libxml2 (**python-lxml** or **python3-lxml**)
+* Python bindings for libxml2 (**python3-lxml**)
 * libxslt1 headers (**libxslt1-dev**)
-* Python headers (**python-dev** or **python3-dev**)
+* Python headers (**python3-dev**)
 
 **You can install these on Ubuntu / Debian** by running:
 
- sudo apt-get install libxml2 libxml2-dev libxslt1-dev python3-lxml python3-dev
+```shell
+sudo apt-get install libxml2 libxml2-dev libxslt1-dev python3-lxml python3-dev
+```
 
 ### DocBook template files
 
@@ -65,7 +68,7 @@ docbook_default_root_element = chapter
 Then, build your project using `sphinx-build` with the `-b docbook` option:
 
 ```shell
-$ sphinx-build source output -b docbook
+sphinx-build source output -b docbook
 ```
 
 ### License

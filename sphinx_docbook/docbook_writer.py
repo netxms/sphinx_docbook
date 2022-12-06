@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
-#
-# #################################
-# abstrys.sphinx_ext.docbook_writer
-# #################################
-#
-# A module for docutils that converts from a doctree to DocBook output.
-#
-# Written by Eron Hennessey
-#
-# Much more information about the elements in this module can be found at:
-#
-# * http://docutils.sourceforge.net/docs/ref/doctree.html
-#
+################################################################################
+"""
+A module for docutils that converts from a doctree to DocBook output.
+
+Originally Written by Eron Hennessey
+Updated for Python3 by Joe Stanley
+"""
+################################################################################
+
 import os
 import sys
 
@@ -22,9 +18,9 @@ import lxml.etree as etree
 
 def _print_error(text, node = None):
     """Prints an error string and optionally, the node being worked on."""
-    sys.stderr.write('\n%s: %s\n' % (__name__, text))
+    sys.stderr.write(f'\n{__name__}: {text}\n')
     if node:
-        sys.stderr.write(u"  %s\n" % node)
+        sys.stderr.write(f"  {node}\n")
 
 
 class DocBookWriter(writers.Writer):
@@ -40,8 +36,12 @@ class DocBookWriter(writers.Writer):
 
     def translate(self):
         """Call the translator to translate the document"""
-        self.visitor = DocBookTranslator(self.document, self.document_type,
-                self.document_id, self.output_xml_header)
+        self.visitor = DocBookTranslator(
+            self.document,
+            self.document_type,
+            self.document_id,
+            self.output_xml_header
+        )
         self.document.walkabout(self.visitor)
         self.output = self.visitor.astext()
         self.fields = self.visitor.fields
@@ -73,14 +73,17 @@ class DocBookTranslator(nodes.NodeVisitor):
         self.tb = etree.TreeBuilder()
         self.fields = {}
         self.current_field_name = None
-        self.nsmap = {'xml': 'http://www.w3.org/XML/1998/namespace',
-                      'xlink': 'http://www.w3.org/1999/xlink',
-                      'xi': 'http://www.w3.org/2001/XInclude',
-                      'svg': 'http://www.w3.org/2000/svg',
-                      'xhtml': 'http://www.w3.org/1999/xhtml',
-                      'mathml': 'http://www.w3.org/1998/Math/MathML',
-                      None: 'http://docbook.org/ns/docbook'}
+        self.nsmap = {
+            'xml': 'http://www.w3.org/XML/1998/namespace',
+            'xlink': 'http://www.w3.org/1999/xlink',
+            'xi': 'http://www.w3.org/2001/XInclude',
+            'svg': 'http://www.w3.org/2000/svg',
+            'xhtml': 'http://www.w3.org/1999/xhtml',
+            'mathml': 'http://www.w3.org/1998/Math/MathML',
+            None: 'http://docbook.org/ns/docbook'
+        }
 
+        self.SkipNode = nodes.SkipNode
 
     #
     # functions used by the translator.
@@ -97,27 +100,42 @@ class DocBookTranslator(nodes.NodeVisitor):
         return rep
 
 
-    def _add_element_title(self, title_name, title_attribs = {}):
+    def _add_element_title(self, title_name, title_attribs = None):
         """Add a title to the current element."""
+        if title_attribs is None:
+            title_attribs = {}
         self._push_element('title', title_attribs)
         self.tb.data(title_name)
         return self.tb_end('title')
 
 
-    def _push_element(self, name, attribs = {}):
+    def _push_element(self, name, attribs = None):
+        if attribs is None:
+            attribs = {}
         if self.next_element_id:
             attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.next_element_id
             self.next_element_id = None
         elif '{http://www.w3.org/XML/1998/namespace}id' in attribs and attribs['{http://www.w3.org/XML/1998/namespace}id'] is None:
             del attribs['{http://www.w3.org/XML/1998/namespace}id']
-        e = self.tb.start(name, attribs, self.nsmap)
+        try:
+            e = self.tb.start(name, attribs, self.nsmap)
+        except Exception as err:
+            print(type(name), type(attribs), type(self.nsmap))
+            print(name)
+            print(attribs)
+            print(self.nsmap)
+            raise err
         self.estack.append(e)
         return e
 
 
     def _pop_element(self):
         e = self.estack.pop()
-        return self.tb.end(e.tag)
+        try:
+            return self.tb.end(str(e.tag))
+        except Exception as err:
+            print(e.tag, type(e.tag), len(e.tag), "\n")
+            raise err
 
 
     #
@@ -202,6 +220,139 @@ class DocBookTranslator(nodes.NodeVisitor):
 
 
     def depart_abstract(self, node):
+        self._pop_element()
+
+
+    def visit_desc(self, node):
+        self._push_element('desc')
+
+    def depart_desc(self, node):
+        self._pop_element()
+
+
+    def visit_desc_signature(self, node):
+        self._push_element('desc_signature')
+
+    def depart_desc_signature(self, node):
+        self._pop_element()
+
+
+    def visit_desc_annotation(self, node):
+        self._push_element('desc_annotation')
+
+    def depart_desc_annotation(self, node):
+        self._pop_element()
+
+
+    def visit_desc_addname(self, node):
+        self._push_element('desc_addname')
+
+    def depart_desc_addname(self, node):
+        self._pop_element()
+
+
+    def visit_desc_name(self, node):
+        self._push_element('desc_name')
+
+    def depart_desc_name(self, node):
+        self._pop_element()
+
+
+    def visit_desc_parameterlist(self, node):
+        self._push_element('desc_parameterlist')
+
+    def depart_desc_parameterlist(self, node):
+        self._pop_element()
+
+
+    def visit_desc_parameter(self, node):
+        self._push_element('desc_parameter')
+
+    def depart_desc_parameter(self, node):
+        self._pop_element()
+
+
+    def visit_desc_content(self, node):
+        self._push_element('desc_content')
+
+    def depart_desc_content(self, node):
+        self._pop_element()
+
+
+    def visit_literal_emphasis(self, node):
+        self._push_element('literal_emphasis')
+
+    def depart_literal_emphasis(self, node):
+        self._pop_element()
+
+
+    def visit_rubric(self, node):
+        self._push_element('rubric')
+
+    def depart_rubric(self, node):
+        self._pop_element()
+
+
+    def visit_doctest_block(self, node):
+        self._push_element('doctest_block')
+
+    def depart_doctest_block(self, node):
+        self._pop_element()
+
+
+    def visit_tabular_col_spec(self, node):
+        self._push_element('tabular_col_spec')
+
+    def depart_tabular_col_spec(self, node):
+        self._pop_element()
+
+
+    def visit_autosummary_table(self, node):
+        self._push_element('autosummary_table')
+
+    def depart_autosummary_table(self, node):
+        self._pop_element()
+
+
+    def visit_seealso(self, node):
+        self._push_element('seealso')
+
+    def depart_seealso(self, node):
+        self._pop_element()
+
+
+    def visit_option_list(self, node):
+        self._push_element('option_list')
+
+    def depart_option_list(self, node):
+        self._pop_element()
+
+
+    def visit_option_list_item(self, node):
+        self._push_element('option_list_item')
+
+    def depart_option_list_item(self, node):
+        self._pop_element()
+
+
+    def visit_option_group(self, node):
+        self._push_element('option_group')
+
+    def depart_option_group(self, node):
+        self._pop_element()
+
+
+    def visit_option_string(self, node):
+        self._push_element('option_string')
+
+    def depart_option_string(self, node):
+        self._pop_element()
+
+
+    def visit_description(self, node):
+        self._push_element('description')
+
+    def depart_description(self, node):
         self._pop_element()
 
 
@@ -582,7 +733,7 @@ class DocBookTranslator(nodes.NodeVisitor):
         attribs = {}
 
         if node.hasattr('cols'):
-            attribs['cols'] =  node['cols']
+            attribs['cols'] = str(node['cols'])
 
         self._push_element('tgroup', attribs)
 
@@ -595,7 +746,7 @@ class DocBookTranslator(nodes.NodeVisitor):
         attribs = {}
 
         if node.hasattr('colwidth'):
-            attribs['colwidth'] = node['colwidth']
+            attribs['colwidth'] = str(node['colwidth'])
 
         self._push_element('colspec', attribs)
 

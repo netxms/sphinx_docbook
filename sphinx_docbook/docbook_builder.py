@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
-#
-# abstrys.sphinx_ext.docbook_builder
-# ------------------------------
-#
-# A DocBook builder for Sphinx, using rst2db's docbook writer.
-#
-# by Eron Hennessey
+################################################################################
+"""
+A module for docutils that converts from a doctree to DocBook output.
 
-from sphinx_docbook.docbook_writer import DocBookWriter
+Originally Written by Eron Hennessey
+Updated for Python3 by Joe Stanley
+"""
+################################################################################
+
+import os
+import sys
 from docutils.core import publish_from_doctree
 from sphinx.builders.text import TextBuilder
-import os, sys
+from sphinx_docbook.docbook_writer import DocBookWriter
 
 class DocBookBuilder(TextBuilder):
     """Build DocBook documents from a Sphinx doctree"""
@@ -26,7 +28,8 @@ class DocBookBuilder(TextBuilder):
             import jinja2
         except ImportError:
             sys.stderr.write(
-                "DocBookBuilder -- Jinja2 is not installed: can't use template!\n"
+                "DocBookBuilder -- Jinja2 is not installed: can't use template!"
+                "\n"
             )
             sys.exit(1)
 
@@ -35,8 +38,9 @@ class DocBookBuilder(TextBuilder):
 
         if not os.path.exists(full_template_path):
             sys.stderr.write(
-                    "DocBookBuilder -- template file doesn't exist: %s\n" %
-                    full_template_path)
+                "DocBookBuilder -- "
+                f"template file doesn't exist: {full_template_path}\n"
+            )
             sys.exit(1)
 
         data = { 'root_element': self.root_element,
@@ -49,11 +53,14 @@ class DocBookBuilder(TextBuilder):
         try:
             t = jinja2env.get_template(self.template_filename)
             t.render(data=data)
+        #pylint: disable=bare-except
         except:
             sys.stderr.write(
-                    "DocBookBuilder -- Jinja2 couldn't load template at: %s" %
-                    full_template_path)
+                "DocBookBuilder -- "
+                f"template file doesn't exist: {full_template_path}\n"
+            )
             sys.exit(1)
+        #pylint: enable=bare-except
 
         return t.render(data=data)
 
@@ -61,11 +68,9 @@ class DocBookBuilder(TextBuilder):
     def get_target_uri(self, docname, typ=None):
        return f'./{docname}.xml'
 
-
     def prepare_writing(self, docnames):
         self.root_element = sphinx_app.config.docbook_default_root_element
         self.template_filename = sphinx_app.config.docbook_template_file
-
 
     def write_doc(self, docname, doctree):
 
@@ -84,7 +89,7 @@ class DocBookBuilder(TextBuilder):
         )
 
         # process the output with a template if a template name was supplied.
-        if self.template_filename != None:
+        if self.template_filename is not None:
             docbook_contents = self.process_with_template(docbook_contents)
 
         out_path = os.path.join(self.outdir, f'{docname}.xml')
@@ -98,4 +103,3 @@ def setup(app):
     app.add_config_value('docbook_default_root_element', 'section', 'env')
     app.add_config_value('docbook_template_file', None, 'env')
     app.add_builder(DocBookBuilder)
-
