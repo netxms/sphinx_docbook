@@ -1,4 +1,4 @@
-# rst2db.py
+# Sphinx DocBook Builder
 
 A Sphinx builder to generate DocBook output (`sphinx_docbook.docbook_builder`).
 
@@ -72,14 +72,8 @@ Then, build your project using `sphinx-build` with the `-b docbook` option:
 License
 -------
 
-This software is provided under the `BSD 3-Clause`__ license. See the
-`LICENSE`__ file for more details.
-
-.. __: http://opensource.org/licenses/BSD-3-Clause
-.. __: https://github.com/Abstrys/abstrys-toolkit/blob/master/LICENSE
-
-For more information
---------------------
-
-Contact: Eron Hennessey <eron@abstrys.com>
+This software is provided under the
+[BSD 3-Clause](http://opensource.org/licenses/BSD-3-Clause) license. See the
+[LICENSE](https://github.com/Abstrys/abstrys-toolkit/blob/master/LICENSE) file
+for more details.
 

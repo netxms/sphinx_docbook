@@ -1,48 +1,24 @@
 #!/usr/bin/env python
+import re
 from setuptools import setup, find_packages
 
-long_desc = """
-Usage
------
+long_desc = ""
+with open("./README.md", "r", encoding="utf-8") as long_desc_file:
+    long_desc = long_desc_file.read()
 
-::
+version = "0.0"
+with open("./sphinx_docbook/__init__.py", "r", encoding="utf-8") as init_file:
+    version = re.findall(r"\= (\d{1,2}\.\d{1,2})", init_file.read())
 
- rst2db <filename> [-e root_element] [-o output_file] [-t template_file]
-
-or::
-
- rst2md <filename>
-
-Only the filename to process is required. All other settings are optional.
-
-Settings:
-
-  -e root_element  set the root element of the resulting docbook file. If this
-                   is not specified, then 'section' will be used.
-
-  -o output_file  set the output filename to write. If this is not specified,
-                  then output will be sent to stdout.
-
-  -t template_file  set a template file to use to dress the output. You must
-                    have Jinja2 installed to use this feature.
-
-                    Use {{data.root_element}} and {{data.contents}} to
-                    represent the output of this script in your template.
-"""
-
-setup(name='rst2db',
-      description="""
-        A reStructuredText to MarkDown converter using Python's docutils.""",
-      version='1.1',
-      install_requires=['docutils>=0.12', 'lxml>=2.3'],
-      packages=find_packages(),
-      entry_points={
-          'console_scripts': [
-              'rst2db = abstrys.cmd_rst2db:run',
-              'rst2md = abstrys.cmd_rst2md:run',
-              ],
-          },
-      author='Eron Hennessey',
-      author_email='eron@abstrys.com',
-      url='https://github.com/Abstrys/rst2db',
-      )
+setup(
+    name='spinx_docbook',
+    description="reStructuredText to DocBook converter using Python docutils.",
+    version=version,
+    long_description=long_desc,
+    long_description_content_type="text/markdown",
+    install_requires=['docutils>=0.12', 'lxml>=2.3'],
+    packages=find_packages(),
+    author='Eron Hennessey', # TODO
+    author_email='eron@abstrys.com', # TODO
+    url='https://github.com/engineerjoe440/sphinx_docbook',
+)
