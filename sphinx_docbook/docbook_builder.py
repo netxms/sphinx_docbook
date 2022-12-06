@@ -7,7 +7,7 @@
 #
 # by Eron Hennessey
 
-from abstrys.docutils_ext.docbook_writer import DocBookWriter
+from sphinx_docbook.docbook_writer import DocBookWriter
 from docutils.core import publish_from_doctree
 from sphinx.builders.text import TextBuilder
 import os, sys
@@ -25,7 +25,9 @@ class DocBookBuilder(TextBuilder):
         try:
             import jinja2
         except ImportError:
-            sys.stderr.write("DocBookBuilder -- Jinja2 is not installed: can't use template!\n")
+            sys.stderr.write(
+                "DocBookBuilder -- Jinja2 is not installed: can't use template!\n"
+            )
             sys.exit(1)
 
         full_template_path = os.path.join(sphinx_app.env.srcdir,
@@ -57,7 +59,7 @@ class DocBookBuilder(TextBuilder):
 
 
     def get_target_uri(self, docname, typ=None):
-       return './%s.xml' % docname
+       return f'./{docname}.xml'
 
 
     def prepare_writing(self, docnames):
@@ -76,15 +78,18 @@ class DocBookBuilder(TextBuilder):
                 output_xml_header=(self.template_filename == None))
 
         # get the docbook output.
-        docbook_contents = publish_from_doctree(doctree,
-                writer=docutils_writer)
+        docbook_contents = publish_from_doctree(
+            doctree,
+            writer=docutils_writer
+        )
 
         # process the output with a template if a template name was supplied.
         if self.template_filename != None:
             docbook_contents = self.process_with_template(docbook_contents)
 
-        output_file = open(os.path.join(self.outdir, '%s.xml' % docname), 'w+')
-        output_file.write(docbook_contents)
+        out_path = os.path.join(self.outdir, f'{docname}.xml')
+        with open(out_path, 'w+', encoding="utf-8") as output_file:
+            output_file.write(docbook_contents.decode('utf-8'))
 
 
 def setup(app):
