@@ -1,9 +1,72 @@
+# Gitignore
+
+# Documentation Build
+docbuild*
+_build/
+
+# Testing File
+deleteme.py
+
+# Ignore VSCode Stuff
+*.vscode/
+
+# Ignore Notepad++ Backup Files
+*.bak
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
 build/
-dist/
-*.html
-*.md
-*.pyc
-*.swp
-*.egg-info
+develop-eggs/
+#dist/ # I want to share the dist packages internally
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 MANIFEST
-.*
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# LaTeX temp files
+*.out
+*.toc
+*.gz
+*.aux
+*.log
+*.pdf
+*.atfi
+*.fdb_latexmk
+*.fls
+
+# Codesys temp files
+*.compiled-library
+*.library
+*.opt
+*.bootinfo
+*.bootinfo_guids
+*.compileinfo
+*.exp

@@ -15,7 +15,6 @@ Before installing rst2db, you'll need the following prerequisites:
 
  sudo apt-get install libxml2 libxml2-dev libxslt1-dev python3-lxml python3-dev
 
-
 ### DocBook template files
 
 When using a DocBook template file, use {{data.root_element}} and {{data.contents}} to represent the
@@ -25,17 +24,16 @@ your ``.rst`` source.
 For example, you could use a template that looks like this:
 
 ```xml
-   <?xml version="1.0" encoding="utf-8"?>
-   <!DOCTYPE {{data.root_element}} PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
-             "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
-   <{{data.root_element}}>
-       {{data.contents}}
-   </{{data.root_element}}>
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE {{data.root_element}} PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+            "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+<{{data.root_element}}>
+    {{data.contents}}
+</{{data.root_element}}>
 ```
 
 A template is only necessary if you want to customize the output. A standard DocBook XML header will
 be included in each output file by default.
-
 
 ## Using the Sphinx Docbook builders
 
@@ -66,14 +64,13 @@ docbook_default_root_element = chapter
 
 Then, build your project using `sphinx-build` with the `-b docbook` option:
 
- sphinx-build source output -b docbook
+```shell
+$ sphinx-build source output -b docbook
+```
 
-
-License
--------
+### License
 
 This software is provided under the
 [BSD 3-Clause](http://opensource.org/licenses/BSD-3-Clause) license. See the
 [LICENSE](https://github.com/Abstrys/abstrys-toolkit/blob/master/LICENSE) file
 for more details.
-
