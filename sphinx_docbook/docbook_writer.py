@@ -132,7 +132,6 @@ class DocBookTranslator(nodes.NodeVisitor):
     def _pop_element(self):
         e = self.estack.pop()
         try:
-            print(e.tag)
             return self.tb.end(str(e.tag))
         except Exception as err:
             print(e.tag, type(e.tag), len(e.tag), "\n")
