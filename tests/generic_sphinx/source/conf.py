@@ -15,6 +15,9 @@ release = '0.0'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'numpydoc',
     'sphinx_docbook.docbook_builder',
 ]
 
