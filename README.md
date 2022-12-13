@@ -1,5 +1,7 @@
 # Sphinx DocBook Builder
 
+> *fork of the original work produced by @abstrys*
+
 A Sphinx builder to generate DocBook output (`sphinx_docbook.docbook_builder`).
 
 ## Prerequisites

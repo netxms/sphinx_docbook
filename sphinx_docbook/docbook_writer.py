@@ -120,10 +120,6 @@ class DocBookTranslator(nodes.NodeVisitor):
         try:
             e = self.tb.start(name, attribs, self.nsmap)
         except Exception as err:
-            print(type(name), type(attribs), type(self.nsmap))
-            print(name)
-            print(attribs)
-            print(self.nsmap)
             raise err
         self.estack.append(e)
         return e
