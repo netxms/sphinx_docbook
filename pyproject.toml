@@ -1,0 +1,24 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "sphinx_docbook"
+authors = [
+    {name = "Eron Hennessey", email = "eron@abstrys.com"},
+    {name = "Joe Stanley", email = "engineerjoe440@yahoo.com"}
+]
+description = "A Sphinx builder to generate DocBook output."
+readme = "README.md"
+dynamic = ["version"]
+classifiers = [
+    "Programming Language :: Python :: 3"
+]
+license = "BSD-3-Clause"
+dependencies = [
+    'docutils >= 0.12',
+    'lxml >= 2.3'
+]
+
+[project.urls]
+Home = "https://github.com/engineerjoe440/sphinx_docbook"

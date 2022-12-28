@@ -1,10 +1,16 @@
 # Sphinx DocBook Builder
 
-> *fork of the original work produced by @abstrys*
+> *fork of the original work produced by @EronHennessey*
 
 A Sphinx builder to generate DocBook output (`sphinx_docbook.docbook_builder`).
 
-## Prerequisites
+## Installing
+
+```shell
+python3 -m pip install sphinx_docbook
+```
+
+### Prerequisites
 
 Before installing `sphinx_docbook` on Linux, you'll need the following
 prerequisites:
