@@ -43,8 +43,8 @@ For example, you could use a template that looks like this:
 </{{data.root_element}}>
 ```
 
-A template is only necessary if you want to customize the output. A standard DocBook XML header will
-be included in each output file by default.
+A template is only necessary if you want to customize the output. A standard
+DocBook XML header will be included in each output file by default.
 
 ## Using the Sphinx Docbook builders
 
