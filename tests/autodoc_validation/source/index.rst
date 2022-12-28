@@ -6,4 +6,13 @@
 Welcome to AutodocTest's documentation!
 =======================================
 
-.. autoclass:: sphinx_docbook.docbook_writer.DocBookTranslator
+Classes
+-------
+
+.. autoclass:: sphinx_docbook.docbook_writer.DocBookWriter
+   :members:
+
+Functions
+---------
+
+.. autofunction:: sphinx_docbook.docbook_writer._print_error

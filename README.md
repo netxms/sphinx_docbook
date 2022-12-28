@@ -22,9 +22,9 @@ sudo apt-get install libxml2 libxml2-dev libxslt1-dev python3-lxml python3-dev
 
 ### DocBook template files
 
-When using a DocBook template file, use {{data.root_element}} and {{data.contents}} to represent the
-root element (chapter, section, etc.) and {{data.contents}} to represent the transformed contents of
-your ``.rst`` source.
+When using a DocBook template file, use {{data.root_element}} and
+{{data.contents}} to represent the root element (chapter, section, etc.) and
+{{data.contents}} to represent the transformed contents of your ``.rst`` source.
 
 For example, you could use a template that looks like this:
 

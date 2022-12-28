@@ -66,7 +66,7 @@ class DocBookBuilder(TextBuilder):
 
 
     def get_target_uri(self, docname, typ=None):
-       return f'./{docname}.xml'
+        return f'./{docname}.xml'
 
     def prepare_writing(self, docnames):
         self.root_element = sphinx_app.config.docbook_default_root_element
@@ -79,8 +79,11 @@ class DocBookBuilder(TextBuilder):
         #(path, filename) = os.path.split(self.output_filename)
         #(doc_id, ext) = os.path.splitext(filename)
 
-        docutils_writer = DocBookWriter(self.root_element, docname,
-                output_xml_header=(self.template_filename == None))
+        docutils_writer = DocBookWriter(
+            root_element=self.root_element,
+            document_id=docname,
+            output_xml_header=(self.template_filename == None)
+        )
 
         # get the docbook output.
         docbook_contents = publish_from_doctree(

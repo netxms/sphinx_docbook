@@ -24,9 +24,20 @@ def _print_error(text, node = None):
 
 
 class DocBookWriter(writers.Writer):
-    """A docutils writer for DocBook."""
+    """
+    A docutils writer for DocBook.
 
-    def __init__(self, root_element, document_id = None, output_xml_header=True):
+    Parameters
+    ----------
+    root_element:       str
+                        The root element which Docbook builder should utilize.
+    document_id:        str, optional
+                        Identifying name of the document.
+    output_xml_header:  bool, optional
+                        Use the builtin XML header information (default).
+    """
+
+    def __init__(self, root_element, document_id=None, output_xml_header=True):
         """Initialize the writer. Takes the root element of the resulting
         DocBook output as its sole argument."""
         writers.Writer.__init__(self)
@@ -35,7 +46,7 @@ class DocBookWriter(writers.Writer):
         self.output_xml_header = output_xml_header
 
     def translate(self):
-        """Call the translator to translate the document"""
+        """Call the translator to translate the document."""
         self.visitor = DocBookTranslator(
             self.document,
             self.document_type,
@@ -65,6 +76,9 @@ class DocBookTranslator(nodes.NodeVisitor):
         self.in_pre_block = False
         self.in_figure = False
         self.next_element_id = None
+
+        self.description_type = None
+        self._auto_summary_node = None
 
         # self.estack is a stack of etree nodes. The bottom of the stack should
         # always be the base element (the document). The top of the stack is
@@ -106,16 +120,21 @@ class DocBookTranslator(nodes.NodeVisitor):
             title_attribs = {}
         self._push_element('title', title_attribs)
         self.tb.data(title_name)
+        #pylint: disable=no-member
         return self.tb_end('title')
+        #pylint: enable=no-member
 
 
     def _push_element(self, name, attribs = None):
         if attribs is None:
             attribs = {}
         if self.next_element_id:
-            attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.next_element_id
+            attribs[
+                '{http://www.w3.org/XML/1998/namespace}id'
+            ] = self.next_element_id
             self.next_element_id = None
-        elif '{http://www.w3.org/XML/1998/namespace}id' in attribs and attribs['{http://www.w3.org/XML/1998/namespace}id'] is None:
+        elif (('{http://www.w3.org/XML/1998/namespace}id' in attribs) and
+            (attribs['{http://www.w3.org/XML/1998/namespace}id'] is None)):
             del attribs['{http://www.w3.org/XML/1998/namespace}id']
         try:
             e = self.tb.start(name, attribs, self.nsmap)
@@ -180,19 +199,27 @@ class DocBookTranslator(nodes.NodeVisitor):
         # document.
         if self.in_first_section == False:
             node['ids'][0] = self.document_id
-            self._push_element(self.document_type,
-                               {'{http://www.w3.org/XML/1998/namespace}id': self.document_id,
-                                'version': '5.0'})
+            self._push_element(
+                self.document_type,
+                {
+                    '{http://www.w3.org/XML/1998/namespace}id': self.document_id,
+                    'version': '5.0'
+                }
+            )
             self.in_first_section = True
             return
 
         if self.next_element_id:
             node['ids'][0] = self.next_element_id
-            attribs['{http://www.w3.org/XML/1998/namespace}id'] = self.next_element_id
+            attribs[
+                '{http://www.w3.org/XML/1998/namespace}id'
+            ] = self.next_element_id
             self.next_element_id = None
         else:
             if len(node['ids']) > 0:
-                attribs['{http://www.w3.org/XML/1998/namespace}id'] = node['ids'][0]
+                attribs[
+                    '{http://www.w3.org/XML/1998/namespace}id'
+                ] = node['ids'][0]
 
         self._push_element('section', attribs)
         # TODO - Collect other attributes.
@@ -220,59 +247,102 @@ class DocBookTranslator(nodes.NodeVisitor):
 
 
     def visit_desc(self, node):
-        self._push_element('desc')
+        attribs = {}
+        self.description_type = node.get("desctype")
+        next_node = node.next_node()
+
+        if self.next_element_id:
+            node['ids'][0] = self.next_element_id
+            attribs[
+                '{http://www.w3.org/XML/1998/namespace}id'
+            ] = self.next_element_id
+            self.next_element_id = None
+        else:
+            if len(node['ids']) > 0:
+                attribs[
+                    '{http://www.w3.org/XML/1998/namespace}id'
+                ] = node['ids'][0]
+            elif len(next_node['ids']) > 0:
+                attribs[
+                    '{http://www.w3.org/XML/1998/namespace}id'
+                ] = next_node['ids'][0]
+
+        self._push_element('section', attribs=attribs)
+
 
     def depart_desc(self, node):
+        # Pop the Autodoc Description if Applicable
+        if self._auto_summary_node is not None:
+            self.depart_autosummary_table(self._auto_summary_node, opt=True)
+            self._auto_summary_node = None
         self._pop_element()
-
 
     def visit_desc_signature(self, node):
-        self._push_element('desc_signature')
+        #self._push_element('desc_signature')
+        pass
 
     def depart_desc_signature(self, node):
-        self._pop_element()
+        #self._pop_element()
+        pass
 
 
     def visit_desc_annotation(self, node):
-        self._push_element('desc_annotation')
+        # ignore description annotation in the output.
+        #self._push_element('desc_annotation')
+        _print_error("ignoring description annotation:", node)
+        raise nodes.SkipNode
 
     def depart_desc_annotation(self, node):
-        self._pop_element()
+        #self._pop_element()
+        pass
 
 
     def visit_desc_addname(self, node):
-        self._push_element('desc_addname')
+        # ignore description addname in the output.
+        #self._push_element('desc_addname')
+        _print_error("ignoring description addname:", node)
+        raise nodes.SkipNode
 
     def depart_desc_addname(self, node):
-        self._pop_element()
+        #self._pop_element()
+        pass
 
 
     def visit_desc_name(self, node):
-        self._push_element('desc_name')
+        if isinstance(self.description_type, str):
+            next_node = str(node.next_node())
+            node.pop()
+            node.append(
+                nodes.Text(f"{next_node} ({self.description_type.title()})")
+            )
+        self.visit_title(node=node)
 
     def depart_desc_name(self, node):
+        self.description_type = None # Reset
         self._pop_element()
 
 
     def visit_desc_parameterlist(self, node):
-        self._push_element('desc_parameterlist')
+        self._push_element('inputs')
 
     def depart_desc_parameterlist(self, node):
         self._pop_element()
 
 
     def visit_desc_parameter(self, node):
-        self._push_element('desc_parameter')
+        self._push_element('input')
 
     def depart_desc_parameter(self, node):
         self._pop_element()
 
 
     def visit_desc_content(self, node):
-        self._push_element('desc_content')
+        #self._push_element('desc_content')
+        pass
 
     def depart_desc_content(self, node):
-        self._pop_element()
+        #self._pop_element()
+        pass
 
 
     def visit_literal_emphasis(self, node):
@@ -283,10 +353,11 @@ class DocBookTranslator(nodes.NodeVisitor):
 
 
     def visit_rubric(self, node):
-        self._push_element('rubric')
+        _print_error("ignoring rubric:", node)
+        raise nodes.SkipNode
 
     def depart_rubric(self, node):
-        self._pop_element()
+        pass
 
 
     def visit_doctest_block(self, node):
@@ -297,17 +368,29 @@ class DocBookTranslator(nodes.NodeVisitor):
 
 
     def visit_tabular_col_spec(self, node):
-        self._push_element('tabular_col_spec')
+        _print_error("ignoring tabular column spec:", node)
+        raise nodes.SkipNode
+        #self._push_element('tabular_col_spec')
 
     def depart_tabular_col_spec(self, node):
-        self._pop_element()
+        pass
 
 
     def visit_autosummary_table(self, node):
-        self._push_element('autosummary_table')
+        self.visit_section(node)
+        rubric = node.previous_sibling().previous_sibling()
+        text = rubric.next_node()
+        self.visit_title(node=rubric)
+        self.visit_Text(text)
+        self.depart_Text(text)
+        self.depart_title(node=rubric)
 
-    def depart_autosummary_table(self, node):
-        self._pop_element()
+    def depart_autosummary_table(self, node, opt=False):
+        if opt:
+            # Only Pop the Element when Leaving the Overall Autodoc Description
+            self._pop_element()
+        else:
+            self._auto_summary_node = node
 
 
     def visit_seealso(self, node):
@@ -438,13 +521,16 @@ class DocBookTranslator(nodes.NodeVisitor):
 
     def visit_title(self, node):
         attribs = {}
-        # first check to see if an {http://www.w3.org/XML/1998/namespace}id was supplied.
+        # first check to see if an {http://www.w3.org/XML/1998/namespace}id was
+        # supplied.
         if len(node['ids']) > 0:
             attribs['{http://www.w3.org/XML/1998/namespace}id'] = node['ids'][0]
         elif len(node.parent['ids']) > 0:
             # If the parent node has an ID, we can use that and add '.title' at
             # the end to make a deterministic title ID.
-            attribs['{http://www.w3.org/XML/1998/namespace}id'] = '%s.title' % node.parent['ids'][0]
+            attribs[
+                '{http://www.w3.org/XML/1998/namespace}id'
+            ] = f"{node.parent['ids'][0]}.title"
         self._push_element('title', attribs)
 
 
@@ -501,7 +587,10 @@ class DocBookTranslator(nodes.NodeVisitor):
                 ref_name = os.path.splitext(node['refuri'])[0]
                 self._push_element('link', {'linkend': ref_name})
             else:
-                self._push_element('link', {'{http://www.w3.org/1999/xlink}href': node['refuri']})
+                self._push_element(
+                    'link',
+                    {'{http://www.w3.org/1999/xlink}href': node['refuri']}
+                )
         else:
             _print_error('unknown reference', node)
 
