@@ -13,3 +13,8 @@ Spinx-Build
    :module: sphinx.cmd.build
    :func: get_parser
    :prog: sphinx-build
+
+.. argparse:: none
+   :module: sphinx.cmd.build
+   :func: get_parser
+   :prog: sphinx build

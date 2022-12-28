@@ -148,9 +148,13 @@ class DocBookTranslator(nodes.NodeVisitor):
         e = self.estack.pop()
         try:
             return self.tb.end(str(e.tag))
-        except Exception as err:
-            print(e.tag, type(e.tag), len(e.tag), "\n")
-            raise err
+        except ValueError as err:
+            original_msg = str(err)
+            message = (
+                f"{original_msg}\nTag Information: "
+                f"{e.tag} :: {type(e.tag)} :: {len(e.tag)}"
+            )
+            raise ValueError(message)
 
 
     #
@@ -183,7 +187,11 @@ class DocBookTranslator(nodes.NodeVisitor):
 
     def depart_paragraph(self, node):
         if self.current_field_name is None:
-            self._pop_element()
+            try:
+                self._pop_element()
+            except ValueError as err:
+                print(node)
+                raise err
 
     def visit_compact_paragraph(self, node):
         self.visit_paragraph(node)
@@ -441,6 +449,16 @@ class DocBookTranslator(nodes.NodeVisitor):
 
     def depart_address(self, node):
         self.depart_literal_block(node)
+
+
+    def visit_download_reference(self, node):
+        # ignore comments in the output.
+        _print_error("ignoring download reference:", node)
+        raise nodes.SkipNode
+
+
+    def depart_download_reference(self, node):
+        pass
 
 
     def visit_comment(self, node):
