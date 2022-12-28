@@ -83,5 +83,5 @@ sphinx-build source output -b docbook
 
 This software is provided under the
 [BSD 3-Clause](http://opensource.org/licenses/BSD-3-Clause) license. See the
-[LICENSE](https://github.com/Abstrys/abstrys-toolkit/blob/master/LICENSE) file
-for more details.
+[LICENSE](https://github.com/engineerjoe440/sphinx_docbook/blob/master/LICENSE)
+file for more details.
