@@ -36,6 +36,7 @@ class DocBookWriter(writers.Writer):
     output_xml_header:  bool, optional
                         Use the builtin XML header information (default).
     """
+    # pylint: disable=attribute-defined-outside-init
 
     def __init__(self, root_element, document_id=None, output_xml_header=True):
         """Initialize the writer. Takes the root element of the resulting
@@ -60,6 +61,8 @@ class DocBookWriter(writers.Writer):
 
 class DocBookTranslator(nodes.NodeVisitor):
     """A docutils translator for DocBook."""
+    # pylint: disable=missing-function-docstring, unnecessary-pass
+    # pylint: disable=unused-argument
 
     def __init__(self, document, document_type, document_id = None,
                  output_xml_header=True):
@@ -149,12 +152,11 @@ class DocBookTranslator(nodes.NodeVisitor):
         try:
             return self.tb.end(str(e.tag))
         except ValueError as err:
-            original_msg = str(err)
             message = (
-                f"{original_msg}\nTag Information: "
+                f"{str(err)}\nTag Information: "
                 f"{e.tag} :: {type(e.tag)} :: {len(e.tag)}"
             )
-            raise ValueError(message)
+            raise ValueError(message) from err
 
 
     #
@@ -768,14 +770,13 @@ class DocBookTranslator(nodes.NodeVisitor):
 
         if node.hasattr('align'):
             alignval = node['align']
-            if (alignval == 'top' or alignval == 'middle' or alignval ==
-                'bottom'):
-              # top, middle, bottom all refer to the docbook 'valign'
-              # attribute.
-              imagedata_attribs['valign'] = alignval
+            if alignval in ['top', 'middle', 'bottom']:
+                # top, middle, bottom all refer to the docbook 'valign'
+                # attribute.
+                imagedata_attribs['valign'] = alignval
             else:
-              # left, right, center stay as-is
-              imagedata_attribs['align'] = alignval
+                # left, right, center stay as-is
+                imagedata_attribs['align'] = alignval
 
         if node.hasattr('target'):
             _print_error('no target attribute supported for images!')
@@ -1067,4 +1068,3 @@ class DocBookTranslator(nodes.NodeVisitor):
 
     def depart_system_message(self, node):
         pass
-

@@ -16,6 +16,8 @@ from sphinx_docbook.docbook_writer import DocBookWriter
 
 class DocBookBuilder(TextBuilder):
     """Build DocBook documents from a Sphinx doctree"""
+    # pylint: disable=attribute-defined-outside-init
+
     name = 'docbook'
 
     def process_with_template(self, contents):
@@ -101,8 +103,10 @@ class DocBookBuilder(TextBuilder):
 
 
 def setup(app):
+    # pylint: disable=global-variable-undefined, invalid-name
     global sphinx_app
     sphinx_app = app
+    # pylint: enable=global-variable-undefined, invalid-name
     app.add_config_value('docbook_default_root_element', 'section', 'env')
     app.add_config_value('docbook_template_file', None, 'env')
     app.add_builder(DocBookBuilder)
