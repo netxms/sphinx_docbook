@@ -14,7 +14,7 @@ dynamic = ["version"]
 classifiers = [
     "Programming Language :: Python :: 3"
 ]
-license = "BSD-3-Clause"
+license = {file = "LICENSE"}
 dependencies = [
     'docutils >= 0.12',
     'lxml >= 2.3'
