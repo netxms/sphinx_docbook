@@ -36,6 +36,9 @@ class DocBookWriter(writers.Writer):
                         Identifying name of the document.
     output_xml_header:  bool, optional
                         Use the builtin XML header information (default).
+    kwargs:             dict[str, str], optional
+                        Dictionary of additional controls for adjusting XML
+                        generation.
     """
     # pylint: disable=attribute-defined-outside-init
 
@@ -44,7 +47,7 @@ class DocBookWriter(writers.Writer):
         root_element: str,
         document_id: str = None,
         output_xml_header: bool = True,
-        use_xml_id_in_titles: bool = False,
+        **kwargs,
     ):
         """Initialize the writer. Takes the root element of the resulting
         DocBook output as its sole argument."""
@@ -52,7 +55,7 @@ class DocBookWriter(writers.Writer):
         self.document_type = root_element
         self.document_id = document_id
         self.output_xml_header = output_xml_header
-        self.use_xml_id_in_titles = use_xml_id_in_titles
+        self._kwargs = kwargs
 
     def translate(self):
         """Call the translator to translate the document."""
@@ -61,7 +64,7 @@ class DocBookWriter(writers.Writer):
             self.document_type,
             self.document_id,
             self.output_xml_header,
-            self.use_xml_id_in_titles,
+            **self._kwargs,
         )
         self.document.walkabout(self.visitor)
         self.output = self.visitor.astext()
@@ -79,7 +82,7 @@ class DocBookTranslator(nodes.NodeVisitor):
         document_type: str,
         document_id: str = None,
         output_xml_header: bool = True,
-        use_xml_id_in_titles: bool = False,
+        **kwargs,
     ):
         """Initialize the translator. Takes the root element of the resulting
         DocBook output as its sole argument."""
@@ -90,7 +93,7 @@ class DocBookTranslator(nodes.NodeVisitor):
         self.document_id = document_id
         self.in_first_section = False
         self.output_xml_header = output_xml_header
-        self.use_xml_id_in_titles = use_xml_id_in_titles
+        self._kwargs = kwargs
 
         self.in_pre_block = False
         self.in_figure = False
@@ -349,14 +352,27 @@ class DocBookTranslator(nodes.NodeVisitor):
 
 
     def visit_desc_parameterlist(self, node):
-        self._push_element('inputs')
+        attribs = {}
+        if len(node['ids']) > 0:
+            attribs[_NAMESPACE_ID] = node['ids'][0]
+        elif len(node.parent['ids']) > 0:
+            # If the parent node has an ID, we can use that and add
+            # '.title' at the end to make a deterministic title ID.
+            attribs[_NAMESPACE_ID] = f"{node.parent['ids'][0]}.parameters"
+        self._push_element('section', attribs=attribs)
+        # Add the Title to the Parameter List
+        self.visit_title(node=node)
+        self.visit_Text(node=nodes.Text("Constructor Parameters"))
+        self._pop_element()
+        self._push_element('variablelist')
 
     def depart_desc_parameterlist(self, node):
+        self._pop_element()
         self._pop_element()
 
 
     def visit_desc_parameter(self, node):
-        self._push_element('input')
+        self._push_element('varlistentry')
 
     def depart_desc_parameter(self, node):
         self._pop_element()
@@ -557,15 +573,16 @@ class DocBookTranslator(nodes.NodeVisitor):
 
     def visit_title(self, node):
         attribs = {}
-        if self.use_xml_id_in_titles:
-            # first check to see if an {http://www.w3.org/XML/1998/namespace}id
-            # was supplied.
-            if len(node['ids']) > 0:
-                attribs[_NAMESPACE_ID] = node['ids'][0]
-            elif len(node.parent['ids']) > 0:
-                # If the parent node has an ID, we can use that and add
-                # '.title' at the end to make a deterministic title ID.
-                attribs[_NAMESPACE_ID] = f"{node.parent['ids'][0]}.title"
+        if "use_xml_id_in_titles" in self._kwargs:
+            if self._kwargs["use_xml_id_in_titles"]:
+                # first check to see if an
+                # {http://www.w3.org/XML/1998/namespace}id was supplied.
+                if len(node['ids']) > 0:
+                    attribs[_NAMESPACE_ID] = node['ids'][0]
+                elif len(node.parent['ids']) > 0:
+                    # If the parent node has an ID, we can use that and add
+                    # '.title' at the end to make a deterministic title ID.
+                    attribs[_NAMESPACE_ID] = f"{node.parent['ids'][0]}.title"
         self._push_element('title', attribs)
 
 

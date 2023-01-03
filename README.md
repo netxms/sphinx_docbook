@@ -63,7 +63,7 @@ There are two configurable parameters for `conf.py` that correspond to
 
 | Name | Description | Default |
 |------|-------------|---------|
-| *docbook_template_file* | Template file that will be used to position the document parts. This should be a valid DocBook .xml file that contains  Requires Jinja2 to be installed if specified. | "`section`" |
+| *docbook_template_file* | Template file that will be used to position the document parts. This should be a valid DocBook .xml file that contains  Requires Jinja2 to be installed if specified. | `"section"` |
 | *docbook_default_root_element* | Default root element for a file-level document.  Default is 'section'. | `None` |
 | *docbook_use_xml_id_in_titles* | Control to enable the use of `xml:id=...` attribute in `title` XML tags. | `False` |
 
