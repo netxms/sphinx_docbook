@@ -35,8 +35,10 @@ class DocBookBuilder(TextBuilder):
             )
             sys.exit(1)
 
-        full_template_path = os.path.join(sphinx_app.env.srcdir,
-                        sphinx_app.config.docbook_template_file)
+        full_template_path = os.path.join(
+            sphinx_app.env.srcdir,
+            sphinx_app.config.docbook_template_file
+        )
 
         if not os.path.exists(full_template_path):
             sys.stderr.write(
@@ -53,8 +55,8 @@ class DocBookBuilder(TextBuilder):
                 trim_blocks=True)
 
         try:
-            t = jinja2env.get_template(self.template_filename)
-            t.render(data=data)
+            template = jinja2env.get_template(self.template_filename)
+            template.render(data=data)
         #pylint: disable=bare-except
         except:
             sys.stderr.write(
@@ -64,7 +66,7 @@ class DocBookBuilder(TextBuilder):
             sys.exit(1)
         #pylint: enable=bare-except
 
-        return t.render(data=data)
+        return template.render(data=data)
 
 
     def get_target_uri(self, docname, typ=None):
@@ -84,7 +86,8 @@ class DocBookBuilder(TextBuilder):
         docutils_writer = DocBookWriter(
             root_element=self.root_element,
             document_id=docname,
-            output_xml_header=(self.template_filename == None)
+            output_xml_header=(self.template_filename == None),
+            use_xml_id_in_titles=sphinx_app.config.docbook_use_xml_id_in_titles,
         )
 
         # get the docbook output.
@@ -109,4 +112,5 @@ def setup(app):
     # pylint: enable=global-variable-undefined, invalid-name
     app.add_config_value('docbook_default_root_element', 'section', 'env')
     app.add_config_value('docbook_template_file', None, 'env')
+    app.add_config_value('docbook_use_xml_id_in_titles', False, 'env')
     app.add_builder(DocBookBuilder)

@@ -22,6 +22,7 @@ def _print_error(text, node = None):
     if node:
         sys.stderr.write(f"  {node}\n")
 
+_NAMESPACE_ID = '{http://www.w3.org/XML/1998/namespace}id'
 
 class DocBookWriter(writers.Writer):
     """
@@ -38,13 +39,20 @@ class DocBookWriter(writers.Writer):
     """
     # pylint: disable=attribute-defined-outside-init
 
-    def __init__(self, root_element, document_id=None, output_xml_header=True):
+    def __init__(
+        self,
+        root_element: str,
+        document_id: str = None,
+        output_xml_header: bool = True,
+        use_xml_id_in_titles: bool = False,
+    ):
         """Initialize the writer. Takes the root element of the resulting
         DocBook output as its sole argument."""
         writers.Writer.__init__(self)
         self.document_type = root_element
         self.document_id = document_id
         self.output_xml_header = output_xml_header
+        self.use_xml_id_in_titles = use_xml_id_in_titles
 
     def translate(self):
         """Call the translator to translate the document."""
@@ -52,7 +60,8 @@ class DocBookWriter(writers.Writer):
             self.document,
             self.document_type,
             self.document_id,
-            self.output_xml_header
+            self.output_xml_header,
+            self.use_xml_id_in_titles,
         )
         self.document.walkabout(self.visitor)
         self.output = self.visitor.astext()
@@ -64,8 +73,14 @@ class DocBookTranslator(nodes.NodeVisitor):
     # pylint: disable=missing-function-docstring, unnecessary-pass
     # pylint: disable=unused-argument
 
-    def __init__(self, document, document_type, document_id = None,
-                 output_xml_header=True):
+    def __init__(
+        self,
+        document,
+        document_type: str,
+        document_id: str = None,
+        output_xml_header: bool = True,
+        use_xml_id_in_titles: bool = False,
+    ):
         """Initialize the translator. Takes the root element of the resulting
         DocBook output as its sole argument."""
         nodes.NodeVisitor.__init__(self, document)
@@ -75,6 +90,7 @@ class DocBookTranslator(nodes.NodeVisitor):
         self.document_id = document_id
         self.in_first_section = False
         self.output_xml_header = output_xml_header
+        self.use_xml_id_in_titles = use_xml_id_in_titles
 
         self.in_pre_block = False
         self.in_figure = False
@@ -541,16 +557,15 @@ class DocBookTranslator(nodes.NodeVisitor):
 
     def visit_title(self, node):
         attribs = {}
-        # first check to see if an {http://www.w3.org/XML/1998/namespace}id was
-        # supplied.
-        if len(node['ids']) > 0:
-            attribs['{http://www.w3.org/XML/1998/namespace}id'] = node['ids'][0]
-        elif len(node.parent['ids']) > 0:
-            # If the parent node has an ID, we can use that and add '.title' at
-            # the end to make a deterministic title ID.
-            attribs[
-                '{http://www.w3.org/XML/1998/namespace}id'
-            ] = f"{node.parent['ids'][0]}.title"
+        if self.use_xml_id_in_titles:
+            # first check to see if an {http://www.w3.org/XML/1998/namespace}id
+            # was supplied.
+            if len(node['ids']) > 0:
+                attribs[_NAMESPACE_ID] = node['ids'][0]
+            elif len(node.parent['ids']) > 0:
+                # If the parent node has an ID, we can use that and add
+                # '.title' at the end to make a deterministic title ID.
+                attribs[_NAMESPACE_ID] = f"{node.parent['ids'][0]}.title"
         self._push_element('title', attribs)
 
 
