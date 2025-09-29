@@ -97,6 +97,7 @@ class DocBookTranslator(nodes.NodeVisitor):
 
         self.in_pre_block = False
         self.in_figure = False
+        self.in_glossary = False
         self.next_element_id = None
 
         self.description_type = None
@@ -136,15 +137,31 @@ class DocBookTranslator(nodes.NodeVisitor):
         return rep
 
 
+    def _sanitize_xml_text(self, text):
+        """Sanitize text content for XML compatibility."""
+        if text is None:
+            return ''
+        
+        text_str = str(text)
+        
+        # Check if text contains invalid XML characters
+        if '\x00' in text_str or any(ord(c) < 32 and c not in '\t\n\r' for c in text_str):
+            # print(f"DEBUG: Found invalid XML characters in text: {repr(text_str)}")
+            # Remove or replace invalid characters
+            sanitized = ''.join(c if ord(c) >= 32 or c in '\t\n\r' else '' for c in text_str if c != '\x00')
+            # print(f"DEBUG: Sanitized text: {repr(sanitized)}")
+            return sanitized
+        
+        return text_str
+
     def _add_element_title(self, title_name, title_attribs = None):
         """Add a title to the current element."""
         if title_attribs is None:
             title_attribs = {}
         self._push_element('title', title_attribs)
-        self.tb.data(title_name)
-        #pylint: disable=no-member
-        return self.tb_end('title')
-        #pylint: enable=no-member
+        sanitized_title = self._sanitize_xml_text(title_name)
+        self.tb.data(sanitized_title)
+        return self._pop_element()
 
 
     def _push_element(self, name, attribs = None):
@@ -195,7 +212,8 @@ class DocBookTranslator(nodes.NodeVisitor):
     #
 
     def visit_Text(self, node):
-        self.tb.data(node)
+        sanitized_text = self._sanitize_xml_text(node)
+        self.tb.data(sanitized_text)
 
 
     def depart_Text(self, node):
@@ -341,8 +359,10 @@ class DocBookTranslator(nodes.NodeVisitor):
         if isinstance(self.description_type, str):
             next_node = str(node.next_node())
             node.pop()
+            # Sanitize the text before creating the Text node
+            sanitized_text = self._sanitize_xml_text(f"{next_node} ({self.description_type.title()})")
             node.append(
-                nodes.Text(f"{next_node} ({self.description_type.title()})")
+                nodes.Text(sanitized_text)
             )
         self.visit_title(node=node)
 
@@ -470,6 +490,20 @@ class DocBookTranslator(nodes.NodeVisitor):
         self._pop_element()
 
 
+    def visit_option(self, node):
+        self._push_element('option')
+
+    def depart_option(self, node):
+        self._pop_element()
+
+
+    def visit_option_argument(self, node):
+        self._push_element('option_argument')
+
+    def depart_option_argument(self, node):
+        self._pop_element()
+
+
     def visit_description(self, node):
         self._push_element('description')
 
@@ -483,6 +517,43 @@ class DocBookTranslator(nodes.NodeVisitor):
 
     def depart_address(self, node):
         self.depart_literal_block(node)
+
+
+    def visit_line_block(self, node):
+        """Visit a line block node.
+        
+        Line blocks preserve line breaks and are typically used for poetry,
+        addresses, or other formatted text where line breaks are significant.
+        In DocBook, we use literallayout to preserve formatting.
+        """
+        self._push_element('literallayout')
+
+
+    def depart_line_block(self, node):
+        """Depart a line block node."""
+        self._pop_element()
+
+
+    def visit_line(self, node):
+        """Visit a line node within a line block.
+        
+        Each line in a line block is represented as a separate line node.
+        We don't need to create additional elements, just let the content flow.
+        """
+        pass
+
+
+    def depart_line(self, node):
+        """Depart a line node within a line block.
+        
+        Add a line break after each line except the last one.
+        """
+        # Check if this is not the last line in the line block
+        if node.parent and hasattr(node, 'parent'):
+            parent_children = list(node.parent.children)
+            if parent_children and node is not parent_children[-1]:
+                # Add a line break after this line (except for the last line)
+                self.tb.data('\n')
 
 
     def visit_download_reference(self, node):
@@ -694,15 +765,27 @@ class DocBookTranslator(nodes.NodeVisitor):
 
 
     def visit_definition_list(self, node):
-        self._push_element('variablelist')
+        # Don't create additional container if we're already in a glossary
+        if not self.in_glossary:
+            self._push_element('variablelist')
 
 
     def depart_definition_list(self, node):
-        self._pop_element()
+        if not self.in_glossary:
+            self._pop_element()
 
 
     def visit_definition_list_item(self, node):
-        self._push_element('varlistentry')
+        attribs = {}
+        
+        # Handle IDs for glossary entries
+        if len(node['ids']) > 0:
+            attribs[_NAMESPACE_ID] = node['ids'][0]
+        
+        if self.in_glossary:
+            self._push_element('glossentry', attribs)
+        else:
+            self._push_element('varlistentry', attribs)
 
 
     def depart_definition_list_item(self, node):
@@ -710,7 +793,16 @@ class DocBookTranslator(nodes.NodeVisitor):
 
 
     def visit_term(self, node):
-        self._push_element('term')
+        attribs = {}
+        
+        # Handle IDs for glossary terms
+        if len(node['ids']) > 0:
+            attribs[_NAMESPACE_ID] = node['ids'][0]
+            
+        if self.in_glossary:
+            self._push_element('glossterm', attribs)
+        else:
+            self._push_element('term', attribs)
 
 
     def depart_term(self, node):
@@ -718,11 +810,17 @@ class DocBookTranslator(nodes.NodeVisitor):
 
 
     def visit_definition(self, node):
-        self.visit_list_item(node)
+        if self.in_glossary:
+            self._push_element('glossdef')
+        else:
+            self.visit_list_item(node)
 
 
     def depart_definition(self, node):
-        self.depart_list_item(node)
+        if self.in_glossary:
+            self._pop_element()
+        else:
+            self.depart_list_item(node)
 
 
     def visit_field_list(self, node):
@@ -788,8 +886,8 @@ class DocBookTranslator(nodes.NodeVisitor):
         if node.hasattr('uri'):
             imagedata_attribs['fileref'] = node['uri']
         else:
-            # unknown attribute
-            imagedata_attribs['eek'] = node
+            # unknown attribute - convert to string representation
+            imagedata_attribs['eek'] = str(node)
 
         if node.hasattr('height'):
             pass # not in docbook
@@ -798,7 +896,7 @@ class DocBookTranslator(nodes.NodeVisitor):
             pass # not in docbook
 
         if node.hasattr('scale'):
-            imagedata_attribs['scale'] = node['scale']
+            imagedata_attribs['scale'] = str(node['scale'])
 
         if node.hasattr('align'):
             alignval = node['align']
@@ -820,7 +918,8 @@ class DocBookTranslator(nodes.NodeVisitor):
         if node.hasattr('alt'):
             self._push_element('textobject')
             self._push_element('phrase')
-            self.tb.data(node['alt'])
+            sanitized_alt = self._sanitize_xml_text(node['alt'])
+            self.tb.data(sanitized_alt)
             self._pop_element() # phrase
             self._pop_element() # textobject
 
@@ -1083,6 +1182,161 @@ class DocBookTranslator(nodes.NodeVisitor):
 
 
     def depart_warning(self, node):
+        self._pop_element()
+
+
+    #
+    # Version modification
+    #
+
+    def visit_versionmodified(self, node):
+        """Handle Sphinx versionmodified nodes (versionadded, versionchanged, deprecated)."""
+        # Use a note element for version information in DocBook
+        # We could also use 'remark' for editorial information
+        self._push_element('note')
+        
+        # Create a title based on the type and version
+        version_type = node.get('type', 'versionmodified')
+        version = node.get('version', '')
+        
+        # Map Sphinx version types to readable titles
+        type_labels = {
+            'versionadded': 'New in version',
+            'versionchanged': 'Changed in version', 
+            'deprecated': 'Deprecated since version',
+            'versionremoved': 'Removed in version'
+        }
+        
+        title_text = f"{type_labels.get(version_type, 'Version')} {version}"
+        if title_text.strip():
+            self._add_element_title(title_text)
+
+
+    def depart_versionmodified(self, node):
+        self._pop_element()
+
+    #
+    # Glossary support
+    #
+
+    def visit_glossary(self, node):
+        """Handle Sphinx glossary directive."""
+        attribs = {}
+        
+        # Handle IDs for glossary
+        if self.next_element_id:
+            attribs[_NAMESPACE_ID] = self.next_element_id
+            self.next_element_id = None
+        elif len(node['ids']) > 0:
+            attribs[_NAMESPACE_ID] = node['ids'][0]
+        
+        # Set glossary context
+        self.in_glossary = True
+        
+        # Create a glossary element in DocBook
+        self._push_element('glossary', attribs)
+        
+        # Add title if not already present
+        # Sphinx glossaries often don't have explicit titles
+        # but DocBook glossaries can benefit from one
+        if not any(isinstance(child, nodes.title) for child in node.children):
+            self._add_element_title('Glossary')
+
+    def depart_glossary(self, node):
+        self.in_glossary = False
+        self._pop_element()
+
+
+
+    def visit_term_reference(self, node):
+        """Handle references to glossary terms."""
+        # Create a link to the glossary term
+        if node.hasattr('refid'):
+            self._push_element('glossterm', {'linkend': node['refid']})
+        else:
+            # Fallback to regular emphasis if no reference ID
+            self._push_element('glossterm')
+
+    def depart_term_reference(self, node):
+        self._pop_element()
+
+    def visit_pending_xref(self, node):
+        """Handle Sphinx cross-references including glossary term references."""
+        reftype = node.get('reftype', '')
+        reftarget = node.get('reftarget', '')
+        
+        if reftype == 'term' and reftarget:
+            # This is a glossary term reference
+            self._push_element('glossterm', {'linkend': reftarget})
+        elif node.get('refid'):
+            # General cross-reference with ID
+            self._push_element('link', {'linkend': node['refid']})
+        elif reftarget:
+            # Use the target as link reference
+            self._push_element('link', {'linkend': reftarget})
+        else:
+            # Fallback to emphasis for unresolved references
+            self._push_element('emphasis')
+
+    def depart_pending_xref(self, node):
+        self._pop_element()
+
+    def visit_glossary_see(self, node):
+        """Handle 'see' references in glossary entries."""
+        self._push_element('glosssee')
+
+    def depart_glossary_see(self, node):
+        self._pop_element()
+
+    def visit_glossary_seealso(self, node):
+        """Handle 'see also' references in glossary entries."""
+        self._push_element('glossseealso')
+
+    def depart_glossary_seealso(self, node):
+        self._pop_element()
+
+    def visit_only(self, node):
+        """Handle Sphinx 'only' directive nodes."""
+        # The 'only' directive is used for conditional content
+        # We'll process its content normally for DocBook output
+        pass
+
+    def depart_only(self, node):
+        pass
+
+    def visit_meta(self, node):
+        """Handle meta nodes (usually for HTML metadata)."""
+        # Meta nodes are typically for HTML output, skip in DocBook
+        _print_error("ignoring meta node:", node)
+        raise nodes.SkipNode
+
+    def depart_meta(self, node):
+        pass
+
+    def visit_highlightlang(self, node):
+        """Handle highlight language directive."""
+        # This directive sets the default highlighting language
+        # Skip it as it's handled at a higher level
+        _print_error("ignoring highlightlang directive:", node)
+        raise nodes.SkipNode
+
+    def depart_highlightlang(self, node):
+        pass
+
+    #
+    # TODO support
+    #
+
+    def visit_todo_node(self, node):
+        """Handle Sphinx TODO nodes from sphinx.ext.todo extension."""
+        # Use a note element with a distinctive title for TODO items
+        self._push_element('note')
+        
+        # Add a standard "TODO" title 
+        self._add_element_title('TODO')
+
+    def depart_todo_node(self, node):
+        """Depart TODO node."""
         self._pop_element()
 
     #
